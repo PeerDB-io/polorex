@@ -4,7 +4,7 @@ go 1.21.5
 
 require (
 	github.com/jackc/pglogrepl v0.0.0-20231111135425-1627ab1b5780
-	github.com/jackc/pgx/v5 v5.5.1
+	github.com/jackc/pgx/v5 v5.5.4
 	github.com/urfave/cli/v3 v3.0.0-alpha8
 	golang.org/x/sync v0.6.0
 )
