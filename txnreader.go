@@ -397,7 +397,7 @@ func (t *txnReader) processMessage(walData []byte) error {
 			return fmt.Errorf("received StreamStopMessage for xid %d without transaction information", t.currentXid)
 		}
 	default:
-		slog.Warn("unexpected message type in pgoutput stream: %T", logicalMsg)
+		slog.Warn("unexpected message type in pgoutput stream:", "logicalMsg", logicalMsg)
 	}
 
 	return nil
