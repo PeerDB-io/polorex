@@ -17,6 +17,7 @@ type polorexConfig struct {
 	slotname  string
 	pubname   string
 	tablename string
+	twoPhase  bool
 }
 
 func (p *polorexConfig) createPostgresConn(ctx context.Context, replication bool) (*pgx.Conn, error) {
@@ -28,7 +29,7 @@ func (p *polorexConfig) createPostgresConn(ctx context.Context, replication bool
 	passwordEscaped := url.QueryEscape(p.password)
 	// for a url like postgres://user:password@host:port/dbname
 	connString := fmt.Sprintf(
-		"postgres://%s:%s@%s:%d/%s?application_name=polorex%s",
+		"postgres://%s:%s@%s:%d/%s?application_name=polorex&client_encoding=UTF8%s",
 		p.user,
 		passwordEscaped,
 		p.host,

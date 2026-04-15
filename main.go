@@ -63,6 +63,11 @@ func main() {
 		Value:   "polorex_table",
 		Sources: cli.EnvVars("POLOREX_TABLENAME"),
 	}
+	twoPhaseFlag := &cli.BoolFlag{
+		Name:    "twophase",
+		Value:   false,
+		Sources: cli.EnvVars("POLOREX_TWOPHASE"),
+	}
 
 	txngenParallelismFlag := &cli.UintFlag{
 		Name:    "parallelism",
@@ -88,6 +93,11 @@ func main() {
 		Name:    "notxn",
 		Value:   false,
 		Sources: cli.EnvVars("POLOREX_NOTXN"),
+	}
+	txngenSubxactsFlag := &cli.BoolFlag{
+		Name:    "subxacts",
+		Value:   false,
+		Sources: cli.EnvVars("POLOREX_SUBXACTS"),
 	}
 
 	txnreadProtocolVersionFlag := &cli.UintFlag{
@@ -118,6 +128,20 @@ func main() {
 		Sources: cli.EnvVars("POLOREX_CSVLOG_FILE_PREFIX"),
 	}
 
+	genPoloRexConfig := func(c *cli.Command) *polorexConfig {
+		return &polorexConfig{
+			host:      c.String("host"),
+			port:      uint16(c.Uint("port")),
+			user:      c.String("user"),
+			password:  c.String("password"),
+			database:  c.String("database"),
+			slotname:  c.String("slotname"),
+			pubname:   c.String("pubname"),
+			tablename: c.String("tablename"),
+			twoPhase:  c.Bool("twophase"),
+		}
+	}
+
 	app := &cli.Command{
 		Name:  "polorex",
 		Usage: "A simple Go application to showcase improvements in the Postgres logical replication protocol.",
@@ -126,16 +150,7 @@ func main() {
 				Name:  "setup",
 				Usage: `Connects to the database and creates a table, publication and slot.`,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return setupMain(ctx, &polorexConfig{
-						host:      cmd.String("host"),
-						port:      uint16(cmd.Uint("port")),
-						user:      cmd.String("user"),
-						password:  cmd.String("password"),
-						database:  cmd.String("database"),
-						slotname:  cmd.String("slotname"),
-						pubname:   cmd.String("pubname"),
-						tablename: cmd.String("tablename"),
-					})
+					return setupMain(ctx, genPoloRexConfig(cmd))
 				},
 				Flags: []cli.Flag{
 					hostFlag,
@@ -146,22 +161,14 @@ func main() {
 					slotnameFlag,
 					pubnameFlag,
 					tablenameFlag,
+					twoPhaseFlag,
 				},
 			},
 			{
 				Name:  "teardown",
 				Usage: `Connects to the database and drops the created slot, publication and table.`,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return teardownMain(ctx, &polorexConfig{
-						host:      cmd.String("host"),
-						port:      uint16(cmd.Uint("port")),
-						user:      cmd.String("user"),
-						password:  cmd.String("password"),
-						database:  cmd.String("database"),
-						slotname:  cmd.String("slotname"),
-						pubname:   cmd.String("pubname"),
-						tablename: cmd.String("tablename"),
-					})
+					return teardownMain(ctx, genPoloRexConfig(cmd))
 				},
 				Flags: []cli.Flag{
 					hostFlag,
@@ -178,21 +185,13 @@ func main() {
 				Name:  "txngen",
 				Usage: `Connects to the database and inserts records into the table.`,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return txngenMain(ctx, &polorexConfig{
-						host:      cmd.String("host"),
-						port:      uint16(cmd.Uint("port")),
-						user:      cmd.String("user"),
-						password:  cmd.String("password"),
-						database:  cmd.String("database"),
-						slotname:  cmd.String("slotname"),
-						pubname:   cmd.String("pubname"),
-						tablename: cmd.String("tablename"),
-					}, &txngenConfig{
+					return txngenMain(ctx, genPoloRexConfig(cmd), &txngenConfig{
 						parallelism: int(cmd.Uint("parallelism")),
 						iterations:  int(cmd.Uint("iterations")),
 						batchSize:   int(cmd.Uint("batchsize")),
 						delayMs:     int(cmd.Uint("delayms")),
 						noTxn:       cmd.Bool("notxn"),
+						subxacts:    cmd.Bool("subxacts"),
 					})
 				},
 				Flags: []cli.Flag{
@@ -209,22 +208,15 @@ func main() {
 					txngenBatchSizeFlag,
 					txngenDelayMsFlag,
 					txngenNoTxnFlag,
+					twoPhaseFlag,
+					txngenSubxactsFlag,
 				},
 			},
 			{
 				Name:  "txnreader",
 				Usage: `Connects to the database and reads transactions in a loop.`,
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return txnreaderMain(ctx, &polorexConfig{
-						host:      cmd.String("host"),
-						port:      uint16(cmd.Uint("port")),
-						user:      cmd.String("user"),
-						password:  cmd.String("password"),
-						database:  cmd.String("database"),
-						slotname:  cmd.String("slotname"),
-						pubname:   cmd.String("pubname"),
-						tablename: cmd.String("tablename"),
-					}, &txnreaderConfig{
+					return txnreaderMain(ctx, genPoloRexConfig(cmd), &txnreaderConfig{
 						protocolVersion:  int(cmd.Uint("protocol")),
 						csvlog:           cmd.Bool("csvlog"),
 						csvlogInterval:   int(cmd.Uint("csvlog_interval")),
